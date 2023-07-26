@@ -58,7 +58,8 @@ class WorkSpaceSerializer(serializers.ModelSerializer):
         fields = [
             'name',
             'created_at',
-            'members'
+            'members',
+            'id'
         ]
 
 
@@ -74,3 +75,27 @@ class UserDetailSerializer(serializers.ModelSerializer):
             members=user
         )
         return WorkSpaceSerializer(workspace_queryset, many=True).data
+
+
+class WorkSpaceCreationSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+
+class TaskCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['name','description', 'deadline']
+
+class TaskSerializer(serializers.ModelSerializer):
+    assigned_user = MemberSerializer()
+
+    class Meta:
+        model = Task
+        fields = ['name','description','status','deadline','assigned_user','id']
+
+class TaskEditSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    description = serializers.CharField()
+    status = serializers.CharField()
+    id = serializers.IntegerField()
+    deadline = serializers.DateTimeField(required=False)
+    assigned_user = serializers.IntegerField(required=False)

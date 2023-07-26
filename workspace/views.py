@@ -7,8 +7,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from helpers.functions import format_serializer_errors
+import workspace
 from .models import WorkSpace, Task, Asset
-from .serializers import WorkSpaceSerializer, LoginSerializer, UserDetailSerializer,  SignUpSerializer
+from .serializers import (WorkSpaceCreationSerializer,TaskSerializer,
+                           LoginSerializer, UserDetailSerializer,
+                               SignUpSerializer, TaskCreationSerializer,
+                                 WorkSpaceSerializer, TaskEditSerializer)
 
 # Create your views here.
 
@@ -27,6 +31,11 @@ class SignUpAPIView(APIView):
             )
             user.set_password(password)
             user.save()
+            workspace = WorkSpace.objects.create(
+                name = f"{username}'s Workspace"
+            )
+            workspace.admins.add(user)
+            workspace.members.add(user)
             data = UserDetailSerializer(user).data
             return Response(data=data)
         return Response(data={"error": format_serializer_errors(data.errors)}, status=400)
@@ -48,6 +57,8 @@ class LoginAPIView(APIView):
             data = UserDetailSerializer(user).data
             data.update(token=token.key)
             return Response(data=data)
+        return Response(data={"error": format_serializer_errors(data.errors)}, status=400)
+        
 
 
 class DashboardOverview(APIView):
@@ -71,3 +82,91 @@ class DashboardOverview(APIView):
             "uncompleted_tasks": uncompleted_tasks.count()
         }
         return Response(data=data)
+
+
+class WorkSpaceCreationView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        data = WorkSpaceCreationSerializer(data=request.data)
+        if data.is_valid():
+            name = data.validated_data.get("name")
+            w_space = WorkSpace.objects.create(name=name)
+            w_space.members.add(request.user)
+            w_space.admins.add(request.user)
+            return Response()
+        return Response(data={"error": format_serializer_errors(data.errors)}, status=400)
+
+
+class WorkSpaceTasks(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, workspace_id):
+        workspace = WorkSpace.objects.filter(id=workspace_id).first()
+        if workspace:
+            tasks = workspace.task_set.all()
+            data = TaskSerializer(tasks, many=True).data
+            return Response(data=data)
+        else:
+            return Response(data={"error":"Invalid workspace"}, status=400)
+        
+
+class CreateTask(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, workspace_id):
+        data = TaskCreationSerializer(data=request.data)
+        if data.is_valid():
+            workspace = WorkSpace.objects.filter(id=workspace_id).first()
+            if workspace:
+                Task.objects.create(
+                    name=data.validated_data.get("name"),
+                    deadline=data.validated_data.get("deadline"),
+                    description=data.validated_data.get('description'),
+                    workspace=workspace
+                )
+                return Response()
+            else:
+                return Response(data={"error":"Invalid workspace"}, status=400)
+        return Response(data={"error": format_serializer_errors(data.errors)}, status=400)
+
+    def put(self, request, workspace_id):
+        data = TaskEditSerializer(data=request.data)
+        if data.is_valid():
+            vdata = data.validated_data
+            name= vdata.get("name")
+            description= vdata.get("description")
+            status= vdata.get("status")
+            id= vdata.get("id")
+            deadline= vdata.get("deadline")
+            assigned_user= vdata.get("assigned_user")
+            user = None
+            if assigned_user:
+                user_qs = User.objects.filter(id=assigned_user).first()
+                if not user_qs:
+                    return Response(data={"error":"Invalid user"}, status=400)
+                user = user_qs
+            task = Task.objects.filter(id=id).first()
+            if not task:
+                return Response(data={"error":"Invalid task"}, status=400)
+            task.name = name
+            task.description = description
+            task.status = status
+            task.deadline = deadline or task.deadline
+            task.assigned_user = user
+            task.save()
+            return Response()
+        return Response(data={"error": format_serializer_errors(data.errors)}, status=400)
+        
+        
+
+class WorkSpaceList(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        workspaces = WorkSpace.objects.filter(
+            members=request.user
+        ).order_by('name')
+        data = WorkSpaceSerializer(workspaces, many=True).data
+        return Response(data=data)
+    
