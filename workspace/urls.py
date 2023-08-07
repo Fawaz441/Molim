@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (SignUpAPIView, LoginAPIView, DashboardOverview,
+from .views import (SignUpAPIView, LoginAPIView, DashboardOverview, WorkSpaceAssetsListView,
                      WorkSpaceCreationView,WorkSpaceTasks, WorkSpaceList,
                      CreateTask)
 
@@ -10,5 +10,6 @@ urlpatterns = [
     path("create-workspace",WorkSpaceCreationView.as_view()),
     path("workspaces/<int:workspace_id>/tasks", WorkSpaceTasks.as_view()),
     path("workspaces", WorkSpaceList.as_view()),
-    path("workspaces/<int:workspace_id>/tasks/create", CreateTask.as_view())
+    path("workspaces/<int:workspace_id>/tasks/create", CreateTask.as_view()),
+    path("workspaces/<int:workspace_id>/assets",WorkSpaceAssetsListView.as_view())
 ]

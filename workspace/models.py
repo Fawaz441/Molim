@@ -40,8 +40,17 @@ class Asset(models.Model):
     name = models.CharField(max_length=1000)
     description = models.TextField(blank=True, null=True)
     workspace = models.ForeignKey(WorkSpace, on_delete=models.CASCADE)
-    file = models.FileField()
+    file = models.FileField(upload_to="assets")
+    uploaded_by = models.ForeignKey(User,on_delete=models.SET_NULL, blank=True, null=True)
+    uploaded_on = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
     
+    @property
+    def url(self):
+        if self.file:
+            return self.file.url
+        
+    class Meta:
+        ordering = ['name']

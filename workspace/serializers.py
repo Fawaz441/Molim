@@ -99,3 +99,17 @@ class TaskEditSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     deadline = serializers.DateTimeField(required=False)
     assigned_user = serializers.IntegerField(required=False)
+
+
+class AssetSerializer(serializers.ModelSerializer):
+
+    uploaded_by = MemberSerializer()
+    class Meta:
+        model = Asset
+        fields = [
+        'name',
+        'description',
+        'url',
+        'uploaded_by',
+        'uploaded_on',
+        ]

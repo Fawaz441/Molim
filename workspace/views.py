@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from helpers.functions import format_serializer_errors
 import workspace
 from .models import WorkSpace, Task, Asset
-from .serializers import (WorkSpaceCreationSerializer,TaskSerializer,
+from .serializers import (AssetSerializer, WorkSpaceCreationSerializer,TaskSerializer,
                            LoginSerializer, UserDetailSerializer,
                                SignUpSerializer, TaskCreationSerializer,
                                  WorkSpaceSerializer, TaskEditSerializer)
@@ -170,3 +170,13 @@ class WorkSpaceList(APIView):
         data = WorkSpaceSerializer(workspaces, many=True).data
         return Response(data=data)
     
+
+class WorkSpaceAssetsListView(APIView):
+    def get(self, request, workspace_id):
+        workspace = WorkSpace.objects.filter(id=workspace_id).first()
+        if workspace:
+            assets = workspace.asset_set.all()
+            data = AssetSerializer(assets, many=True).data
+            return Response(data=data)
+        else:
+            return Response(data={"error":"Invalid workspace"}, status=400)
