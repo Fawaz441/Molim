@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,7 +10,7 @@ from rest_framework.views import APIView
 from helpers.functions import format_serializer_errors
 import workspace
 from .models import WorkSpace, Task, Asset
-from .serializers import (AssetSerializer, WorkSpaceCreationSerializer,TaskSerializer,
+from .serializers import (AssetCreationSerializer, AssetSerializer, WorkSpaceCreationSerializer,TaskSerializer,
                            LoginSerializer, UserDetailSerializer,
                                SignUpSerializer, TaskCreationSerializer,
                                  WorkSpaceSerializer, TaskEditSerializer)
@@ -102,7 +103,7 @@ class WorkSpaceTasks(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, workspace_id):
-        workspace = WorkSpace.objects.filter(id=workspace_id).first()
+        workspace = WorkSpace.objects.filter(id=workspace_id, members=request.user).first()
         if workspace:
             tasks = workspace.task_set.all()
             data = TaskSerializer(tasks, many=True).data
@@ -117,7 +118,7 @@ class CreateTask(APIView):
     def post(self, request, workspace_id):
         data = TaskCreationSerializer(data=request.data)
         if data.is_valid():
-            workspace = WorkSpace.objects.filter(id=workspace_id).first()
+            workspace = WorkSpace.objects.filter(id=workspace_id,members=request.user).first()
             if workspace:
                 Task.objects.create(
                     name=data.validated_data.get("name"),
@@ -173,10 +174,35 @@ class WorkSpaceList(APIView):
 
 class WorkSpaceAssetsListView(APIView):
     def get(self, request, workspace_id):
-        workspace = WorkSpace.objects.filter(id=workspace_id).first()
+        workspace = WorkSpace.objects.filter(id=workspace_id, members=request.user).first()
         if workspace:
             assets = workspace.asset_set.all()
             data = AssetSerializer(assets, many=True).data
             return Response(data=data)
+        else:
+            return Response(data={"error":"Invalid workspace"}, status=400)
+
+
+class CreateAsset(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, workspace_id):
+        serializer = AssetCreationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data={"error": format_serializer_errors(serializer.errors)}, status=400)
+        workspace = WorkSpace.objects.filter(id=workspace_id, members=request.user).first()
+        if workspace:
+            data = serializer.validated_data
+            name = data.get("name")
+            description = data.get("description")
+            file = data.get("file")
+            Asset.objects.create(
+                name=name,
+                description=description,
+                file=file,
+                workspace=workspace,
+                uploaded_by=request.user
+            )
+            return Response()
         else:
             return Response(data={"error":"Invalid workspace"}, status=400)

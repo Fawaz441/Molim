@@ -113,3 +113,9 @@ class AssetSerializer(serializers.ModelSerializer):
         'uploaded_by',
         'uploaded_on',
         ]
+
+class AssetCreationSerializer(serializers.Serializer):
+    '''Serializer for uploading an asset'''
+    file = serializers.ImageField()
+    name = serializers.CharField()
+    description = serializers.CharField()
