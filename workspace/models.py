@@ -20,6 +20,7 @@ class WorkSpace(TimeAwareModel):
     admins = models.ManyToManyField(User, blank=True,related_name="admins")
     created_at = models.DateTimeField(auto_now=True)
     members = models.ManyToManyField(User, blank=True, related_name="members")
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name

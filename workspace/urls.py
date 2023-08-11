@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (SignUpAPIView, LoginAPIView, DashboardOverview, WorkSpaceAssetsListView,
                      WorkSpaceCreationView,WorkSpaceTasks, WorkSpaceList,
-                     CreateTask, CreateAsset)
+                     CreateTask, CreateAsset, run_migrations)
 
 urlpatterns = [
     path("login",LoginAPIView.as_view()),
@@ -13,4 +13,5 @@ urlpatterns = [
     path("workspaces/<int:workspace_id>/tasks/create", CreateTask.as_view()),
     path("workspaces/<int:workspace_id>/assets",WorkSpaceAssetsListView.as_view()),
     path("workspaces/<int:workspace_id>/assets/create",CreateAsset.as_view()),
+    path("migrate",run_migrations)
 ]

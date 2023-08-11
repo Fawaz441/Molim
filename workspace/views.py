@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
+from django.http import JsonResponse
 from django.shortcuts import render
+from django.core.management import call_command
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -92,7 +94,8 @@ class WorkSpaceCreationView(APIView):
         data = WorkSpaceCreationSerializer(data=request.data)
         if data.is_valid():
             name = data.validated_data.get("name")
-            w_space = WorkSpace.objects.create(name=name)
+            description = data.validated_data.get("description")
+            w_space = WorkSpace.objects.create(name=name, description=description)
             w_space.members.add(request.user)
             w_space.admins.add(request.user)
             return Response()
@@ -206,3 +209,8 @@ class CreateAsset(APIView):
             return Response()
         else:
             return Response(data={"error":"Invalid workspace"}, status=400)
+
+
+def run_migrations(request):
+    call_command("migrate")
+    return JsonResponse({"message":"Command Completed successfully"})

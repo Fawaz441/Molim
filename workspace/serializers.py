@@ -79,6 +79,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 class WorkSpaceCreationSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
+    description = serializers.CharField()
 
 class TaskCreationSerializer(serializers.ModelSerializer):
     class Meta:
